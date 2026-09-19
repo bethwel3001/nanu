@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f8fafc" />
+  <meta name="description" content="NANU: Resilient Offline Incident Logger" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <title>NANU | Resilient Offline Incident Logger</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Screen 1: Viewport / Fold 1 (NANU, Subtitle, Hero, Metrics) -->
+    <section class="screen-first" id="screen-first">
+      <!-- Top Header -->
+      <header class="header">
+        <h1 class="logo logo-silkscreen" id="nanu-logo">NANU<span class="logo-dot">.</span></h1>
+        <p class="subtitle">Resilient Offline Incident Logger</p>
+      </header>
+
+      <!-- Hero Section (4 Clean Lines) -->
+      <div class="hero-panel">
+        <h2 class="hero-title brand-font">Built for Any Connection</h2>
+        <div class="hero-grid">
+          <div class="hero-item">
+            <svg class="telegram-arrow" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+              <path d="M4 2.5L20 12L4 21.5L7.5 12L4 2.5Z"/>
+            </svg>
+            <p>Built for intermittent connectivity and device restarts across the Rift Valley.</p>
+          </div>
+          <div class="hero-item">
+            <svg class="telegram-arrow" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+              <path d="M4 2.5L20 12L4 21.5L7.5 12L4 2.5Z"/>
+            </svg>
+            <p>Instant zero-latency app initialization powered by Workbox Core precaching.</p>
+          </div>
+          <div class="hero-item">
+            <svg class="telegram-arrow" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+              <path d="M4 2.5L20 12L4 21.5L7.5 12L4 2.5Z"/>
+            </svg>
+            <p>Field incident reports safely persist in IndexedDB via Background Sync.</p>
+          </div>
+          <div class="hero-item">
+            <svg class="telegram-arrow" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+              <path d="M4 2.5L20 12L4 21.5L7.5 12L4 2.5Z"/>
+            </svg>
+            <p>Automatic network replay flushes the outbox and clears OS badges on recovery.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metrics Row -->
+      <div class="metrics-row">
+        <div class="metric-card">
+          <p class="metric-label">Network state</p>
+          <p id="metric-network" class="metric-value brand-font text-blue">Online</p>
+        </div>
+        <div class="metric-card">
+          <p class="metric-label">Outbox queue</p>
+          <p id="metric-outbox" class="metric-value brand-font">Synced</p>
+        </div>
+        <div class="metric-card">
+          <p class="metric-label">Total reports</p>
+          <p id="metric-count" class="metric-value brand-font">0</p>
+        </div>
+      </div>
+
+      <!-- Scroll Cue to Next Screen -->
+      <div class="scroll-cue">
+        <a href="#workspace" class="scroll-cue-link">
+          <span>Scroll to log incident</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- Main Workspace (Screen 2 - Accessed on Scroll) -->
+    <main class="workspace-grid" id="workspace">
+      <!-- Left Column: Incident Entry Form -->
+      <section class="card-panel">
+        <div class="card-title-group">
+          <h3 class="card-title brand-font">Log field incident</h3>
+          <p class="card-desc">Submissions made offline persist and sync automatically.</p>
+        </div>
+
+        <form id="incident-form" class="form-body" novalidate>
+          <div class="form-group">
+            <label for="reporter-name">Reporter name</label>
+            <input
+              type="text"
+              id="reporter-name"
+              placeholder="e.g. Jane Kiprono"
+              required
+              autocomplete="name"
+            />
+          </div>
+
+          <div class="form-group">
+            <div class="label-split">
+              <label for="field-coords">Field coordinates</label>
+              <button type="button" id="detect-gps-btn" class="action-link">Detect GPS</button>
+            </div>
+            <input
+              type="text"
+              id="field-coords"
+              placeholder="-0.3031, 36.0800"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label id="severity-label" for="severity-trigger">Severity level</label>
+            <div class="custom-dropdown" id="severity-dropdown">
+              <button
+                type="button"
+                id="severity-trigger"
+                class="dropdown-trigger"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-labelledby="severity-label severity-trigger"
+              >
+                <span class="dropdown-trigger-content">
+                  <span class="severity-dot dot-medium" id="trigger-dot" aria-hidden="true"></span>
+                  <span class="dropdown-trigger-text">
+                    <span class="trigger-name" id="trigger-name">Medium</span>
+                    <span class="trigger-sub" id="trigger-sub">(action recommended)</span>
+                  </span>
+                </span>
+                <svg class="dropdown-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+
+              <!-- Dropdown House (Popover Container) -->
+              <div
+                class="dropdown-house"
+                id="severity-menu"
+                role="listbox"
+                aria-labelledby="severity-label"
+                tabindex="-1"
+              >
+                <div
+                  class="dropdown-item"
+                  role="option"
+                  data-value="low"
+                  data-name="Low"
+                  data-sub="(routine)"
+                  tabindex="0"
+                  aria-selected="false"
+                >
+                  <div class="dropdown-item-left">
+                    <span class="severity-dot dot-low" aria-hidden="true"></span>
+                    <div class="dropdown-item-info">
+                      <span class="item-title">Low</span>
+                      <span class="item-desc">Routine non-urgent observation</span>
+                    </div>
+                  </div>
+                  <svg class="item-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+
+                <div
+                  class="dropdown-item selected"
+                  role="option"
+                  data-value="medium"
+                  data-name="Medium"
+                  data-sub="(action recommended)"
+                  tabindex="0"
+                  aria-selected="true"
+                >
+                  <div class="dropdown-item-left">
+                    <span class="severity-dot dot-medium" aria-hidden="true"></span>
+                    <div class="dropdown-item-info">
+                      <span class="item-title">Medium</span>
+                      <span class="item-desc">Standard intervention recommended</span>
+                    </div>
+                  </div>
+                  <svg class="item-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+
+                <div
+                  class="dropdown-item"
+                  role="option"
+                  data-value="high"
+                  data-name="High"
+                  data-sub="(urgent intervention)"
+                  tabindex="0"
+                  aria-selected="false"
+                >
+                  <div class="dropdown-item-left">
+                    <span class="severity-dot dot-high" aria-hidden="true"></span>
+                    <div class="dropdown-item-info">
+                      <span class="item-title">High</span>
+                      <span class="item-desc">Urgent field action required</span>
+                    </div>
+                  </div>
+                  <svg class="item-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+
+                <div
+                  class="dropdown-item"
+                  role="option"
+                  data-value="critical"
+                  data-name="Critical"
+                  data-sub="(immediate hazard)"
+                  tabindex="0"
+                  aria-selected="false"
+                >
+                  <div class="dropdown-item-left">
+                    <span class="severity-dot dot-critical" aria-hidden="true"></span>
+                    <div class="dropdown-item-info">
+                      <span class="item-title">Critical</span>
+                      <span class="item-desc">Immediate life safety hazard</span>
+                    </div>
+                  </div>
+                  <svg class="item-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Native Hidden Input for Form Submission -->
+              <input type="hidden" id="severity-rating" name="severity" value="medium" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="observation-notes">Observation notes</label>
+            <textarea
+              id="observation-notes"
+              rows="4"
+              placeholder="Detail observed field metrics, equipment state, or hazards..."
+              required
+            ></textarea>
+          </div>
+
+          <button type="submit" id="submit-btn" class="primary-button brand-font">
+            Submit incident report
+          </button>
+        </form>
+      </section>
+
+      <!-- Right Column: Incident Outbox Feed -->
+      <section class="card-panel">
+        <div class="card-title-group flex-between">
+          <div>
+            <h3 class="card-title brand-font">Incident outbox</h3>
+            <p class="card-desc">Verified and pending submissions</p>
+          </div>
+          <span id="reports-count" class="count-badge brand-font">0</span>
+        </div>
+
+        <div id="reports-list" class="reports-feed">
+          <div class="empty-state">
+            <p class="empty-title">No reports logged yet</p>
+            <p class="empty-sub">Fill out the incident form to record your first field report.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

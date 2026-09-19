@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.vite/
+*.local
+.DS_Store
+*.pdf
+NANU Project Proposal & Vibe Coding Spec.pdf
