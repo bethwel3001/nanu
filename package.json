@@ -4,6 +4,7 @@
   "description": "Resilient offline incident logger in vanilla HTML, CSS, and JavaScript",
   "type": "module",
   "scripts": {
+    "build": "echo 'Vanilla web build ready'",
     "start": "node js/server.js",
     "dev": "node js/server.js"
   },
