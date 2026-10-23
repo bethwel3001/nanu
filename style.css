@@ -1,8 +1,4 @@
-/* ==========================================================================
-   NANU: Minimalist Offline Incident Logger
-   SatGate UI System with Claude-Style Logo & Custom Dropdown
-   Single Uniform Background (#f8fafc) | Red Offline Indicator
-   ========================================================================== */
+/* Design tokens and theme variables */
 
 :root {
   --font-brand: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -84,10 +80,7 @@ body {
   flex-direction: column;
 }
 
-/* --------------------------------------------------------------------------
-   Screen 1: First Viewport / Fold (Guaranteed Full Screen)
-   Fits NANU, distance, subtitle, hero panel, metrics, and scroll cue
-   -------------------------------------------------------------------------- */
+/* First viewport layout */
 .screen-first {
   min-height: 100vh;
   min-height: 100dvh;
@@ -108,9 +101,7 @@ body {
   }
 }
 
-/* --------------------------------------------------------------------------
-   Header (NANU Logo with generous distance to Subtitle)
-   -------------------------------------------------------------------------- */
+/* Header and logo */
 .header {
   display: flex;
   flex-direction: column;
@@ -118,7 +109,7 @@ body {
   gap: 0;
 }
 
-/* NANU Terracotta Orange Pixel Typography (Significantly Increased Scale) */
+/* Pixel logo typography */
 .logo.logo-silkscreen {
   font-family: var(--font-pixel);
   font-size: clamp(4rem, 10vw, 7.5rem);
@@ -226,9 +217,7 @@ body {
   }
 }
 
-/* --------------------------------------------------------------------------
-   Scroll Cue Indicator
-   -------------------------------------------------------------------------- */
+/* Scroll cue indicator */
 .scroll-cue {
   display: flex;
   justify-content: center;
@@ -283,9 +272,7 @@ body {
   border-color: var(--color-black);
 }
 
-/* --------------------------------------------------------------------------
-   Hero Panel (Clean Unboxed Transparent Background)
-   -------------------------------------------------------------------------- */
+/* Hero section */
 .hero-panel {
   background-color: transparent;
   border: none;
@@ -349,9 +336,7 @@ body {
   line-height: 1.5;
 }
 
-/* --------------------------------------------------------------------------
-   Metrics Row (Red Offline Indicator)
-   -------------------------------------------------------------------------- */
+/* Metrics overview row */
 .metrics-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -399,9 +384,7 @@ body {
   color: var(--color-red);
 }
 
-/* --------------------------------------------------------------------------
-   Main Workspace: 2-Column Grid
-   -------------------------------------------------------------------------- */
+/* Main two-column workspace */
 .workspace-grid {
   display: grid;
   grid-template-columns: 1fr 1.05fr;
@@ -472,9 +455,7 @@ body {
   border-radius: 12px;
 }
 
-/* --------------------------------------------------------------------------
-   Form Body (Sentence Case / No All-Caps)
-   -------------------------------------------------------------------------- */
+/* Incident entry form */
 .form-body {
   display: flex;
   flex-direction: column;
@@ -493,7 +474,7 @@ body {
   align-items: center;
 }
 
-/* Sentence Case Natural Labels */
+/* Input labels */
 label {
   font-size: 13px;
   font-weight: 600;
@@ -527,17 +508,13 @@ textarea {
   line-height: 1.5;
 }
 
-/* --------------------------------------------------------------------------
-   Custom Severity Level Dropdown Component
-   Includes: The Dropdown Trigger, The House (Container),
-   The When They Are Displayed (Animations), and The Items Being Dropped Down
-   -------------------------------------------------------------------------- */
+/* Custom severity dropdown component */
 .custom-dropdown {
   position: relative;
   width: 100%;
 }
 
-/* The Dropdown Trigger */
+/* Dropdown trigger button */
 .dropdown-trigger {
   width: 100%;
   background-color: var(--color-white);
@@ -607,7 +584,7 @@ textarea {
   color: var(--color-blue);
 }
 
-/* The House (The Floating Popover Container) */
+/* Dropdown popover container */
 .dropdown-house {
   position: absolute;
   top: calc(100% + 6px);
@@ -624,7 +601,7 @@ textarea {
   gap: 2px;
   overflow: hidden;
 
-  /* The When They Are Displayed (Smooth Scale & Fade Entrance) */
+  /* Popover entrance animation */
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -642,7 +619,7 @@ textarea {
   transform: translateY(0) scale(1);
 }
 
-/* The Items Being Dropped Down */
+/* Dropdown list items */
 .dropdown-item {
   display: flex;
   align-items: center;
@@ -785,9 +762,7 @@ textarea {
   cursor: not-allowed;
 }
 
-/* --------------------------------------------------------------------------
-   Reports Feed
-   -------------------------------------------------------------------------- */
+/* Incident reports feed */
 .reports-feed {
   display: flex;
   flex-direction: column;
