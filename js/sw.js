@@ -1,12 +1,4 @@
-/* ==========================================================================
-   NANU SERVICE WORKER (VANILLA JAVASCRIPT)
-   --------------------------------------------------------------------------
-   Core Offline Backbone for Progressive Web App Demonstrations:
-   
-   SECTION 1: CACHING & APP SHELL PRECACHING (Cache Storage API)
-   SECTION 2: OFFLINE CAPABILITIES & NETWORK INTERCEPTION (Fetch Handling)
-   SECTION 3: BACKGROUND SYNC & OUTBOX QUEUE REPLAY (Background Sync API & IndexedDB)
-   ========================================================================== */
+// Service Worker: offline caching, fetch interception, and background sync
 
 const CACHE_NAME = 'nanu-cache-v1';
 const DB_NAME = 'nanu-db';
@@ -14,7 +6,7 @@ const DB_VERSION = 1;
 const STORE_OUTBOX = 'outbox';
 const STORE_REPORTS = 'reports';
 
-// Core assets required for complete offline operation
+// Static assets cached for offline operation
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -29,15 +21,7 @@ const PRECACHE_ASSETS = [
   '/images/maskable-icon-512x512.png'
 ];
 
-
-/* ==========================================================================
-   SECTION 1: CACHING & APP SHELL PRECACHING (Cache Storage API)
-   --------------------------------------------------------------------------
-   On 'install', we download and cache all critical app shell assets.
-   On 'activate', we delete any outdated caches to keep storage clean.
-   ========================================================================== */
-
-// 1. INSTALL: Pre-cache the entire app shell for zero-latency offline boots
+// Precache static application shell on install
 self.addEventListener('install', (event) => {
   console.log('[ServiceWorker] Install: Precaching static assets');
   
@@ -47,7 +31,6 @@ self.addEventListener('install', (event) => {
         return cache.addAll(PRECACHE_ASSETS);
       })
       .then(() => {
-        // Activate worker immediately without waiting for tabs to close
         return self.skipWaiting();
       })
       .catch((err) => {
@@ -56,7 +39,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// 2. ACTIVATE: Purge obsolete caches and claim existing clients
+// Clean up old caches and claim control of clients
 self.addEventListener('activate', (event) => {
   console.log('[ServiceWorker] Activate: Claiming clients and purging stale caches');
   
@@ -73,30 +56,20 @@ self.addEventListener('activate', (event) => {
         );
       })
       .then(() => {
-        // Take immediate control of all open pages under our scope
         return self.clients.claim();
       })
   );
 });
 
-
-/* ==========================================================================
-   SECTION 2: OFFLINE CAPABILITIES & NETWORK INTERCEPTION (Fetch Handling)
-   --------------------------------------------------------------------------
-   Intercepts all network requests:
-   - Stale-While-Revalidate caching for static assets (HTML, CSS, JS, fonts).
-   - Serves instantly from Cache Storage, updates in background when online.
-   ========================================================================== */
-
+// Intercept requests: network-first for API, stale-while-revalidate for assets
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // API calls are handled with network-first and client outbox fallback
+  // Fallback response for offline API requests
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request.clone()).catch(() => {
-        // When network fails for API, respond with fallback message
         return new Response(
           JSON.stringify({ offline: true, message: 'Operating offline. Handled by client outbox queue.' }),
           { status: 503, headers: { 'Content-Type': 'application/json' } }
@@ -106,10 +79,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-While-Revalidate strategy for app assets
+  // Stale-while-revalidate caching for static assets
   event.respondWith(
     caches.match(request).then((cachedResponse) => {
-      // Fetch fresh version in background to update cache
       const fetchPromise = fetch(request)
         .then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
@@ -121,28 +93,17 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(() => {
-          // Network failed; offline fallback
           if (request.mode === 'navigate') {
             return caches.match('/index.html');
           }
         });
 
-      // Return cached version immediately if available, otherwise wait for network
       return cachedResponse || fetchPromise;
     })
   );
 });
 
-
-/* ==========================================================================
-   SECTION 3: BACKGROUND SYNC & OUTBOX QUEUE REPLAY (Background Sync API & IndexedDB)
-   --------------------------------------------------------------------------
-   When offline reports are submitted, they are persisted to IndexedDB.
-   As soon as internet connectivity recovers, the browser triggers the 'sync'
-   event in the background, flushing queued reports to the server.
-   ========================================================================== */
-
-// Native IndexedDB Helper for the Service Worker
+// Open IndexedDB database for offline queue storage
 function openDatabase() {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -162,7 +123,7 @@ function openDatabase() {
   });
 }
 
-// Replays all pending reports from IndexedDB 'outbox' to /api/reports
+// Flush queued reports from IndexedDB outbox to the server
 async function replayOutboxQueue() {
   console.log('[ServiceWorker Sync] Replaying outbox queue to server...');
 
@@ -194,7 +155,6 @@ async function replayOutboxQueue() {
         });
 
         if (response.ok) {
-          // Remove successfully uploaded report from outbox
           const deleteTx = db.transaction(STORE_OUTBOX, 'readwrite');
           deleteTx.objectStore(STORE_OUTBOX).delete(report.id);
           await new Promise((res) => { deleteTx.oncomplete = res; });
@@ -204,11 +164,11 @@ async function replayOutboxQueue() {
         }
       } catch (err) {
         console.warn(`[ServiceWorker Sync] Replay failed for report ${report.id}, will retry on next sync:`, err);
-        break; // Stop loop if network drops again
+        break;
       }
     }
 
-    // Broadcast sync status to all open tabs/windows
+    // Broadcast sync status to active client windows
     const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
     for (const client of clients) {
       client.postMessage({
@@ -223,7 +183,7 @@ async function replayOutboxQueue() {
   }
 }
 
-// 1. Native Background Sync Event: Browser wakes service worker when online
+// Background Sync event triggered by browser upon network recovery
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-nanu-reports') {
     console.log('[ServiceWorker] Background Sync triggered: sync-nanu-reports');
@@ -231,7 +191,7 @@ self.addEventListener('sync', (event) => {
   }
 });
 
-// 2. Direct message listener for manual replay from client window
+// Manual queue replay trigger from client window
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'REPLAY_QUEUE') {
     console.log('[ServiceWorker] Client requested manual outbox replay');
