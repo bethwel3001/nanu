@@ -1,7 +1,4 @@
-/**
- * Vercel Serverless Function: /api/reports
- * Handles GET, POST, DELETE for incident reports on production Vercel deployments.
- */
+// Vercel serverless function for incident reports API
 
 const serverReports = [];
 
@@ -17,14 +14,14 @@ export default async function handler(req, res) {
     return;
   }
 
-  // GET: Return all synchronized reports
+  // Return synchronized reports
   if (req.method === 'GET') {
     res.statusCode = 200;
     res.end(JSON.stringify({ reports: serverReports, count: serverReports.length }));
     return;
   }
 
-  // POST: Receive new or replayed report
+  // Ingest new or replayed incident report
   if (req.method === 'POST') {
     let body = req.body;
     if (typeof body === 'string') {
@@ -47,7 +44,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  // DELETE: Reset for demo run
+  // Clear reports for fresh demo state
   if (req.method === 'DELETE') {
     serverReports.length = 0;
     res.statusCode = 200;
