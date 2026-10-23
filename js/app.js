@@ -1,40 +1,21 @@
-/* ==========================================================================
-   NANU: RESILIENT OFFLINE INCIDENT LOGGER
-   Vanilla JavaScript Client Application (Demo Architecture)
-   --------------------------------------------------------------------------
-   Table of Contents:
-   1. SERVICE WORKER REGISTRATION & LIFECYCLE
-   2. OFFLINE CAPABILITIES & CONNECTIVITY DETECTION
-   3. BACKGROUND SYNC & INDEXEDDB OUTBOX MANAGEMENT
-   4. PLATFORM APIS: APP BADGING, WEB SHARE & GEOLOCATION
-   5. UI CONTROLLERS: CUSTOM DROPDOWN, FORM HANDLING & FEED
-   ========================================================================== */
-
-// Storage & Database Constants
+// Storage and database constants
 const DB_NAME = 'nanu-db';
 const DB_VERSION = 1;
 const STORE_OUTBOX = 'outbox';
 const STORE_REPORTS = 'reports';
 const STORAGE_KEY = 'nanu_reports_cache';
 
-// In-memory reports state
+// In-memory reports state loaded from local cache
 let reports = loadStoredReports();
 
-
-/* ==========================================================================
-   SECTION 1: SERVICE WORKER REGISTRATION & LIFECYCLE
-   --------------------------------------------------------------------------
-   Registers the native vanilla service worker 'js/sw.js' with root scope (/)
-   so it controls the entire web application shell.
-   ========================================================================== */
-
+// Register service worker with root scope
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
       const registration = await navigator.serviceWorker.register('/js/sw.js', { scope: '/' });
       console.log('[NANU] Service Worker registered successfully with scope:', registration.scope);
 
-      // Listen for updates when a new service worker is installed
+      // Notify when a new service worker update is ready
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         newWorker.addEventListener('statechange', () => {
@@ -48,7 +29,7 @@ if ('serviceWorker' in navigator) {
     }
   });
 
-  // Listen for broadcast messages from the Service Worker (e.g. background sync results)
+  // Handle broadcast messages from service worker
   navigator.serviceWorker.addEventListener('message', async (event) => {
     if (event.data && event.data.type === 'SYNC_COMPLETED') {
       console.log('[NANU] Received SYNC_COMPLETED from Service Worker:', event.data);
@@ -57,28 +38,18 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Native PWA Installation Event: Allow browser to show default install UI
+// Capture native PWA install prompt
 window.addEventListener('beforeinstallprompt', (event) => {
   console.log('[NANU] Browser install prompt is ready for user interaction:', event);
 });
 
-
-/* ==========================================================================
-   SECTION 2: OFFLINE CAPABILITIES & CONNECTIVITY DETECTION
-   --------------------------------------------------------------------------
-   Monitors device network status in real-time.
-   Updates the UI state, button labels, and kicks off synchronization recovery.
-   ========================================================================== */
-
+// Network indicators and submission elements
 const metricNetwork = document.getElementById('metric-network');
 const metricOutbox = document.getElementById('metric-outbox');
 const metricCount = document.getElementById('metric-count');
 const submitBtn = document.getElementById('submit-btn');
 
-/**
- * Updates the network status metric card and submission button
- * @param {boolean} online 
- */
+// Update network metric card and submit button state
 function setOnlineStatus(online) {
   if (online) {
     if (metricNetwork) {
@@ -99,7 +70,7 @@ function setOnlineStatus(online) {
   }
 }
 
-// Network online event: Device re-connected to the internet
+// Handle network reconnection and trigger sync recovery
 window.addEventListener('online', async () => {
   console.log('[NANU] Network recovered: Device is now ONLINE');
   setOnlineStatus(true);
@@ -112,28 +83,16 @@ window.addEventListener('online', async () => {
   await handleSyncRecovery();
 });
 
-// Network offline event: Device disconnected
+// Handle network disconnect
 window.addEventListener('offline', () => {
   console.log('[NANU] Network dropped: Device is now OFFLINE');
   setOnlineStatus(false);
 });
 
-// Set initial network state
+// Initialize current network status
 setOnlineStatus(navigator.onLine);
 
-
-/* ==========================================================================
-   SECTION 3: BACKGROUND SYNC & INDEXEDDB OUTBOX MANAGEMENT
-   --------------------------------------------------------------------------
-   Stores failed/offline submissions into IndexedDB 'outbox'.
-   Registers a Background Sync task so the browser automatically retries
-   transmitting reports when connectivity returns.
-   ========================================================================== */
-
-/**
- * Opens the native browser IndexedDB database
- * @returns {Promise<IDBDatabase>}
- */
+// Open IndexedDB database for local report storage
 function openDB() {
   return new Promise((resolve, reject) => {
     if (!('indexedDB' in window)) {
@@ -156,10 +115,7 @@ function openDB() {
   });
 }
 
-/**
- * Persists an incident report to the offline IndexedDB outbox
- * @param {object} report 
- */
+// Persist queued incident report to IndexedDB outbox
 async function saveToOutbox(report) {
   try {
     const db = await openDB();
@@ -172,10 +128,7 @@ async function saveToOutbox(report) {
   }
 }
 
-/**
- * Counts total pending reports waiting in the outbox
- * @returns {Promise<number>}
- */
+// Count pending incident reports in outbox
 async function getOutboxCount() {
   try {
     const db = await openDB();
@@ -191,9 +144,7 @@ async function getOutboxCount() {
   }
 }
 
-/**
- * Requests the browser to register a Background Sync task
- */
+// Register one-shot background sync task with browser
 async function requestBackgroundSync() {
   if ('serviceWorker' in navigator && 'SyncManager' in window) {
     try {
@@ -206,14 +157,11 @@ async function requestBackgroundSync() {
   }
 }
 
-/**
- * Sync recovery: updates indicators, flushes local state, and refreshes server reports
- */
+// Refresh local state and indicators after sync recovery
 async function handleSyncRecovery() {
   const pending = await getOutboxCount();
   
   if (pending === 0) {
-    // All queued items have synced; mark local copies as synced
     reports = reports.map((r) => (r.status === 'queued' ? { ...r, status: 'synced' } : r));
     persistReports(reports);
     renderReports();
@@ -223,9 +171,7 @@ async function handleSyncRecovery() {
   await fetchServerReports();
 }
 
-/**
- * Fetches verified incident reports from the server
- */
+// Fetch latest incident reports from server
 async function fetchServerReports() {
   if (!navigator.onLine) return;
   try {
@@ -250,26 +196,13 @@ async function fetchServerReports() {
   }
 }
 
-
-/* ==========================================================================
-   SECTION 4: PLATFORM APIS: APP BADGING, WEB SHARE & GEOLOCATION
-   --------------------------------------------------------------------------
-   Demonstrates modern web platform integration with zero framework code.
-   - App Badging API: Displays pending incident count on desktop dock / mobile home.
-   - Web Share API: Triggers native OS share sheet.
-   - Geolocation API: Captures device coordinates.
-   ========================================================================== */
-
-/**
- * Updates UI Outbox card and native OS App Badge
- * @param {number} pendingCount 
- */
+// Update outbox metric card and native OS app badge
 async function updateOutboxIndicators(pendingCount) {
   if (metricOutbox) {
     metricOutbox.textContent = pendingCount > 0 ? `${pendingCount} Queued` : 'Synced';
   }
 
-  // Native App Badging API
+  // Set or clear native app badge on supported platforms
   if ('setAppBadge' in navigator) {
     try {
       if (pendingCount > 0) {
@@ -285,10 +218,7 @@ async function updateOutboxIndicators(pendingCount) {
   }
 }
 
-/**
- * Shares an incident report via native OS Share sheet with clipboard fallback
- * @param {object} report 
- */
+// Share incident report via Web Share API or clipboard fallback
 async function shareIncidentReport(report) {
   const shareText = `[${report.severity.toUpperCase()}] Incident logged by ${report.reporter} at coordinates ${report.coordinates}:\n"${report.notes}"`;
   
@@ -305,7 +235,7 @@ async function shareIncidentReport(report) {
     }
   }
 
-  // Fallback: copy to clipboard
+  // Clipboard copy fallback when Web Share API is unavailable
   try {
     await navigator.clipboard.writeText(shareText);
     alert('Incident report copied to clipboard!');
@@ -315,7 +245,7 @@ async function shareIncidentReport(report) {
   }
 }
 
-// Geolocation: Auto-detect coordinates button
+// Geolocation auto-detection button handler
 const detectGpsBtn = document.getElementById('detect-gps-btn');
 const coordsInput = document.getElementById('field-coords');
 
@@ -331,7 +261,6 @@ detectGpsBtn?.addEventListener('click', () => {
       detectGpsBtn.textContent = 'Detect GPS';
     },
     () => {
-      // Default to Nakuru Rift Valley Basin sample coordinates on failure/permission decline
       coordsInput.value = '-0.3031, 36.0800';
       detectGpsBtn.textContent = 'Detect GPS';
     },
@@ -339,14 +268,7 @@ detectGpsBtn?.addEventListener('click', () => {
   );
 });
 
-
-/* ==========================================================================
-   SECTION 5: UI CONTROLLERS: CUSTOM DROPDOWN, FORM HANDLING & FEED
-   --------------------------------------------------------------------------
-   Manages all user interactions with lightweight vanilla DOM manipulation.
-   ========================================================================== */
-
-// Custom Severity Dropdown Elements
+// Custom severity dropdown elements
 const severityDropdown = document.getElementById('severity-dropdown');
 const severityTrigger = document.getElementById('severity-trigger');
 const severityRating = document.getElementById('severity-rating');
@@ -355,12 +277,7 @@ const triggerName = document.getElementById('trigger-name');
 const triggerSub = document.getElementById('trigger-sub');
 const dropdownItems = document.querySelectorAll('.dropdown-item');
 
-/**
- * Updates selected severity state and trigger display
- * @param {string} val 
- * @param {string} [name] 
- * @param {string} [sub] 
- */
+// Update severity selection and trigger display
 function setSeverity(val, name, sub) {
   if (severityRating) severityRating.value = val;
 
@@ -387,6 +304,7 @@ function setSeverity(val, name, sub) {
   closeDropdown();
 }
 
+// Toggle dropdown popover visibility
 function toggleDropdown() {
   const isOpen = severityDropdown?.classList.contains('open');
   if (isOpen) {
@@ -396,6 +314,7 @@ function toggleDropdown() {
   }
 }
 
+// Open dropdown popover and focus selected item
 function openDropdown() {
   severityDropdown?.classList.add('open');
   severityTrigger?.setAttribute('aria-expanded', 'true');
@@ -403,18 +322,19 @@ function openDropdown() {
   selected?.focus();
 }
 
+// Close dropdown popover
 function closeDropdown() {
   severityDropdown?.classList.remove('open');
   severityTrigger?.setAttribute('aria-expanded', 'false');
 }
 
-// Trigger Click
+// Toggle dropdown on trigger click
 severityTrigger?.addEventListener('click', (e) => {
   e.stopPropagation();
   toggleDropdown();
 });
 
-// Dropdown item selection & keyboard navigation
+// Handle dropdown item click and keyboard navigation
 dropdownItems.forEach((item) => {
   item.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -455,7 +375,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Keyboard open/close from trigger
+// Keyboard controls for dropdown trigger
 severityTrigger?.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeDropdown();
@@ -465,13 +385,14 @@ severityTrigger?.addEventListener('keydown', (e) => {
   }
 });
 
-// Incident Form Submission
+// Incident form submission elements
 const incidentForm = document.getElementById('incident-form');
 const reporterInput = document.getElementById('reporter-name');
 const notesInput = document.getElementById('observation-notes');
 const reportsList = document.getElementById('reports-list');
 const reportsCount = document.getElementById('reports-count');
 
+// Handle form submission: sync immediately or queue in outbox
 incidentForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -482,7 +403,6 @@ incidentForm?.addEventListener('submit', async (e) => {
 
   if (!reporter || !coordinates || !notes) return;
 
-  // Create incident report model
   const report = {
     id: `rep-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     reporter,
@@ -510,29 +430,27 @@ incidentForm?.addEventListener('submit', async (e) => {
         await requestBackgroundSync();
       }
     } catch {
-      // Network dropped during transmission
       report.status = 'queued';
       await saveToOutbox(report);
       await requestBackgroundSync();
     }
   } else {
-    // Pure offline submission
     report.status = 'queued';
     await saveToOutbox(report);
     await requestBackgroundSync();
   }
 
-  // Prepend to UI feed and save local snapshot
+  // Prepend report to feed and persist locally
   reports.unshift(report);
   persistReports(reports);
   renderReports();
 
-  // Reset form inputs & dropdown
+  // Reset form inputs and severity selector
   incidentForm.reset();
   setSeverity('medium', 'Medium', '(action recommended)');
   coordsInput.value = '';
 
-  // Update Outbox Queue indicator & OS App Badge
+  // Refresh outbox indicators and OS badge
   const pending = await getOutboxCount();
   const effective = Math.max(pending, reports.filter((r) => r.status === 'queued').length);
   await updateOutboxIndicators(effective);
@@ -541,7 +459,7 @@ incidentForm?.addEventListener('submit', async (e) => {
   submitBtn.textContent = navigator.onLine ? 'Submit incident report' : 'Queue incident (offline)';
 });
 
-// Renders the list of logged incidents
+// Render incident reports feed
 function renderReports() {
   if (reportsCount) reportsCount.textContent = String(reports.length);
   if (metricCount) metricCount.textContent = String(reports.length);
@@ -574,7 +492,6 @@ function renderReports() {
     </article>
   `).join('');
 
-  // Wire up share buttons
   document.querySelectorAll('.share-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-id');
@@ -584,13 +501,14 @@ function renderReports() {
   });
 }
 
+// Escape untrusted strings for safe DOM insertion
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
 
-// Local Storage Snapshot Helpers
+// Load cached reports from localStorage
 function loadStoredReports() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -600,13 +518,14 @@ function loadStoredReports() {
   }
 }
 
+// Persist reports to localStorage
 function persistReports(items) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   } catch {}
 }
 
-// App Initialization
+// Initialize application state, indicators, and reports
 async function init() {
   renderReports();
   const pending = await getOutboxCount();
