@@ -339,11 +339,17 @@ body {
 /* Metrics overview row */
 .metrics-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.25rem;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 960px) {
+  .metrics-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 580px) {
   .metrics-row {
     grid-template-columns: 1fr;
     gap: 0.85rem;
@@ -359,6 +365,36 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+.metric-header-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sim-toggle-btn {
+  background-color: var(--color-slate-100);
+  border: 1px solid var(--color-slate-200);
+  border-radius: 6px;
+  color: var(--color-slate-700);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sim-toggle-btn:hover {
+  background-color: var(--color-slate-200);
+  color: var(--color-black);
+}
+
+.sim-toggle-btn.active {
+  background-color: var(--color-red-light);
+  border-color: var(--color-red-border);
+  color: var(--color-red);
 }
 
 .metric-label {
@@ -382,6 +418,10 @@ body {
 
 .metric-value.text-red {
   color: var(--color-red);
+}
+
+.metric-value.text-green {
+  color: var(--color-green);
 }
 
 /* Main two-column workspace */
@@ -901,4 +941,171 @@ textarea {
 .share-btn:hover {
   background-color: var(--color-blue-light);
   border-color: var(--color-blue-border);
+}
+
+/* In-browser AI and Project Fugu document toolbars */
+.action-tools-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tool-sep {
+  color: var(--color-slate-300);
+  font-size: 12px;
+}
+
+.ai-trigger-row {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.action-pill-ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 9px;
+  border: 1px solid var(--color-blue-border);
+  background-color: var(--color-blue-light);
+  color: var(--color-blue);
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.action-pill-ai:hover {
+  background-color: #dbeafe;
+}
+
+.action-pill-ai:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ai-loading-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-slate-500);
+  animation: pulse-soft 1.5s infinite;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* In-browser AI insights panel */
+.ai-insights-panel {
+  margin-top: 0.75rem;
+  padding: 1rem 1.15rem;
+  border-radius: 12px;
+  border: 1px solid #bfdbfe;
+  background-color: #f8fbff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  animation: ai-appear 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ai-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ai-panel-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ai-panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-slate-700);
+}
+
+.chip-ai {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+
+.ai-metrics-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ai-stat-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-slate-500);
+  background-color: var(--color-white);
+  border: 1px solid var(--color-slate-200);
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+}
+
+.ai-summary-body {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--color-slate-700);
+}
+
+.ai-bullets-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ai-bullets-list li {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-slate-700);
+}
+
+.ai-panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.4rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.ai-suggestion-text {
+  font-size: 12px;
+  color: var(--color-slate-600);
+}
+
+.ai-suggestion-text strong {
+  color: var(--color-black);
+  text-transform: capitalize;
 }
