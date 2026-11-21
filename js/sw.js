@@ -1,6 +1,6 @@
 // Service Worker: offline caching, fetch interception, and background sync
 
-const CACHE_NAME = 'nanu-cache-v1';
+const CACHE_NAME = 'nanu-cache-v2';
 const DB_NAME = 'nanu-db';
 const DB_VERSION = 1;
 const STORE_OUTBOX = 'outbox';
@@ -14,6 +14,7 @@ const PRECACHE_ASSETS = [
   '/manifest.json',
   '/js/app.js',
   '/js/sw.js',
+  '/js/ai-assistant.js',
   '/images/favicon.svg',
   '/images/apple-touch-icon.png',
   '/images/pwa-192x192.png',
