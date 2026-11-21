@@ -43,15 +43,20 @@ window.addEventListener('beforeinstallprompt', (event) => {
   console.log('[NANU] Browser install prompt is ready for user interaction:', event);
 });
 
-// Network indicators and submission elements
+// Network indicators, offline simulator, and submission elements
+let isSimulatedOffline = false;
 const metricNetwork = document.getElementById('metric-network');
+const metricAi = document.getElementById('metric-ai');
 const metricOutbox = document.getElementById('metric-outbox');
 const metricCount = document.getElementById('metric-count');
 const submitBtn = document.getElementById('submit-btn');
+const simOfflineBtn = document.getElementById('sim-offline-btn');
 
 // Update network metric card and submit button state
 function setOnlineStatus(online) {
-  if (online) {
+  const isOnline = !isSimulatedOffline && online;
+
+  if (isOnline) {
     if (metricNetwork) {
       metricNetwork.textContent = 'Online';
       metricNetwork.className = 'metric-value brand-font text-blue';
@@ -61,11 +66,38 @@ function setOnlineStatus(online) {
     }
   } else {
     if (metricNetwork) {
-      metricNetwork.textContent = 'Offline';
+      metricNetwork.textContent = isSimulatedOffline ? 'Offline (Sim)' : 'Offline';
       metricNetwork.className = 'metric-value brand-font text-red';
     }
     if (submitBtn) {
       submitBtn.textContent = 'Queue incident (offline)';
+    }
+  }
+}
+
+// Toggle simulated offline mode for live stage demonstrations
+simOfflineBtn?.addEventListener('click', async () => {
+  isSimulatedOffline = !isSimulatedOffline;
+  simOfflineBtn.classList.toggle('active', isSimulatedOffline);
+  simOfflineBtn.textContent = isSimulatedOffline ? 'Go online' : 'Simulate offline';
+  setOnlineStatus(navigator.onLine);
+
+  // Trigger sync recovery when returning to online state
+  if (!isSimulatedOffline && navigator.onLine) {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'REPLAY_QUEUE' });
+    }
+    await handleSyncRecovery();
+  }
+});
+
+// Detect browser AI capabilities on startup
+function updateAiEngineMetric() {
+  if (metricAi) {
+    if (typeof window !== 'undefined' && window.ai?.languageModel) {
+      metricAi.textContent = 'Gemini Nano';
+    } else {
+      metricAi.textContent = 'In-Browser AI';
     }
   }
 }
@@ -385,12 +417,102 @@ severityTrigger?.addEventListener('keydown', (e) => {
   }
 });
 
-// Incident form submission elements
+// Incident form submission and AI assistant elements
 const incidentForm = document.getElementById('incident-form');
 const reporterInput = document.getElementById('reporter-name');
 const notesInput = document.getElementById('observation-notes');
 const reportsList = document.getElementById('reports-list');
 const reportsCount = document.getElementById('reports-count');
+
+// Project Fugu file and local AI controls
+const openDocBtn = document.getElementById('open-doc-btn');
+const loadSampleBtn = document.getElementById('load-sample-btn');
+const runAiBtn = document.getElementById('run-ai-btn');
+const aiLoadingIndicator = document.getElementById('ai-loading-indicator');
+const aiInsightsPanel = document.getElementById('ai-insights-panel');
+const aiModelBadge = document.getElementById('ai-model-badge');
+const aiLatencyBadge = document.getElementById('ai-latency-badge');
+const aiSummaryText = document.getElementById('ai-summary-text');
+const aiBulletsList = document.getElementById('ai-bullets-list');
+const aiSeveritySuggestion = document.getElementById('ai-severity-suggestion');
+const applyAiBtn = document.getElementById('apply-ai-btn');
+
+let lastAiSuggestedSeverity = 'medium';
+
+// Open local text document using Project Fugu File System Access API
+openDocBtn?.addEventListener('click', async () => {
+  try {
+    const { pickLocalDocument } = await import('./ai-assistant.js');
+    const doc = await pickLocalDocument();
+    if (doc) {
+      notesInput.value = doc.content;
+      notesInput.focus();
+    }
+  } catch (err) {
+    console.error('[Fugu] Failed to open document:', err);
+  }
+});
+
+// Load sample field telemetry document for instant stage demo
+loadSampleBtn?.addEventListener('click', async () => {
+  const { SAMPLE_DOCUMENT } = await import('./ai-assistant.js');
+  notesInput.value = SAMPLE_DOCUMENT;
+  if (!reporterInput.value) reporterInput.value = 'Bethwel Kiplagat';
+  if (!coordsInput.value) coordsInput.value = '-0.3031, 36.0800';
+  notesInput.focus();
+});
+
+// Run in-browser AI summarization and risk analysis with zero cloud round-trips
+runAiBtn?.addEventListener('click', async () => {
+  const text = notesInput.value.trim();
+  if (!text) {
+    alert('Please enter notes or open a local document to summarize.');
+    notesInput.focus();
+    return;
+  }
+
+  runAiBtn.disabled = true;
+  if (aiLoadingIndicator) aiLoadingIndicator.style.display = 'inline-block';
+
+  try {
+    // Dynamic import demonstrates deferred loading (ship only what the user interacts with)
+    const { summarizeWithLocalAI } = await import('./ai-assistant.js');
+    const result = await summarizeWithLocalAI(text);
+
+    if (aiModelBadge) aiModelBadge.textContent = result.model;
+    if (aiLatencyBadge) aiLatencyBadge.textContent = `Latency: ${result.latencyMs}ms`;
+    if (aiSummaryText) aiSummaryText.textContent = result.summary;
+
+    if (aiBulletsList) {
+      aiBulletsList.innerHTML = result.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join('');
+    }
+
+    lastAiSuggestedSeverity = result.suggestedSeverity;
+    if (aiSeveritySuggestion) {
+      aiSeveritySuggestion.innerHTML = `Suggested severity: <strong>${result.suggestedSeverity}</strong>`;
+    }
+
+    if (aiInsightsPanel) aiInsightsPanel.style.display = 'flex';
+  } catch (err) {
+    console.error('[LocalAI] Summarization error:', err);
+    alert(`Local AI Error: ${err.message}`);
+  } finally {
+    runAiBtn.disabled = false;
+    if (aiLoadingIndicator) aiLoadingIndicator.style.display = 'none';
+  }
+});
+
+// Apply AI recommended severity to custom dropdown
+applyAiBtn?.addEventListener('click', () => {
+  const metaLookup = {
+    low: { name: 'Low', sub: '(routine)' },
+    medium: { name: 'Medium', sub: '(action recommended)' },
+    high: { name: 'High', sub: '(urgent intervention)' },
+    critical: { name: 'Critical', sub: '(immediate hazard)' }
+  };
+  const meta = metaLookup[lastAiSuggestedSeverity] || metaLookup.medium;
+  setSeverity(lastAiSuggestedSeverity, meta.name, meta.sub);
+});
 
 // Handle form submission: sync immediately or queue in outbox
 incidentForm?.addEventListener('submit', async (e) => {
@@ -403,6 +525,8 @@ incidentForm?.addEventListener('submit', async (e) => {
 
   if (!reporter || !coordinates || !notes) return;
 
+  const isOnline = !isSimulatedOffline && navigator.onLine;
+
   const report = {
     id: `rep-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     reporter,
@@ -410,12 +534,12 @@ incidentForm?.addEventListener('submit', async (e) => {
     severity,
     notes,
     timestamp: new Date().toISOString(),
-    status: navigator.onLine ? 'synced' : 'queued'
+    status: isOnline ? 'synced' : 'queued'
   };
 
   submitBtn.disabled = true;
 
-  if (navigator.onLine) {
+  if (isOnline) {
     try {
       const res = await fetch('/api/reports', {
         method: 'POST',
@@ -445,8 +569,9 @@ incidentForm?.addEventListener('submit', async (e) => {
   persistReports(reports);
   renderReports();
 
-  // Reset form inputs and severity selector
+  // Reset form inputs, AI panel, and severity selector
   incidentForm.reset();
+  if (aiInsightsPanel) aiInsightsPanel.style.display = 'none';
   setSeverity('medium', 'Medium', '(action recommended)');
   coordsInput.value = '';
 
@@ -456,7 +581,7 @@ incidentForm?.addEventListener('submit', async (e) => {
   await updateOutboxIndicators(effective);
 
   submitBtn.disabled = false;
-  submitBtn.textContent = navigator.onLine ? 'Submit incident report' : 'Queue incident (offline)';
+  submitBtn.textContent = isOnline ? 'Submit incident report' : 'Queue incident (offline)';
 });
 
 // Render incident reports feed
@@ -528,6 +653,7 @@ function persistReports(items) {
 // Initialize application state, indicators, and reports
 async function init() {
   renderReports();
+  updateAiEngineMetric();
   const pending = await getOutboxCount();
   const effective = Math.max(pending, reports.filter((r) => r.status === 'queued').length);
   await updateOutboxIndicators(effective);
