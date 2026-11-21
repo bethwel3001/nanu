@@ -48,7 +48,9 @@ When submissions occur offline or network requests fail:
 - **Background Sync API**: The client registers a sync event (`sync-nanu-reports`). The browser wakes the Service Worker when connectivity returns, even if the user has navigated away or closed the tab.
 - **Fallback Synchronization**: The client listens for the window `online` event to send an immediate replay signal (`REPLAY_QUEUE`) to the Service Worker, supporting browsers without native Background Sync.
 
-### 4. Platform Web APIs
+### 4. Platform Web APIs & Project Fugu
+- **In-Browser Local AI** (`window.ai` / Chrome Gemini Nano Prompt API): Summarizes documents and analyzes incident risks directly on-device with zero cloud latency and total privacy. Includes an offline client-side heuristic engine fallback.
+- **File System Access API** (`window.showOpenFilePicker`): Reads local files directly from the device file system without server uploads.
 - **App Badging API** (`navigator.setAppBadge`): Reflects the number of pending outbox items on the operating system dock or taskbar.
 - **Web Share API** (`navigator.share`): Triggers the native OS share sheet with an automatic clipboard fallback.
 - **Geolocation API** (`navigator.geolocation`): Auto-detects geographic coordinates with fallback presets.
@@ -63,6 +65,7 @@ When submissions occur offline or network requests fail:
 | `style.css` | Design system, responsive layout, and keyframe animations |
 | `manifest.json` | Web App Manifest for standalone installation |
 | `js/app.js` | Client-side application logic, IndexedDB queue, and platform APIs |
+| `js/ai-assistant.js` | On-device AI engine supporting `window.ai` (Gemini Nano) and Project Fugu |
 | `js/sw.js` | Native Service Worker managing caching, fetch events, and sync replays |
 | `js/server.js` | Zero-dependency Node.js mock API and static file server |
 | `images/` | Application icons and favicons |
