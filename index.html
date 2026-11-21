@@ -21,36 +21,36 @@
       <!-- Top Header -->
       <header class="header">
         <h1 class="logo logo-silkscreen" id="nanu-logo">NANU<span class="logo-dot">.</span></h1>
-        <p class="subtitle">Resilient Offline Incident Logger</p>
+        <p class="subtitle">Resilient Offline Incident Logger &amp; In-Browser AI Assistant</p>
       </header>
 
       <!-- Hero Section (4 Clean Lines) -->
       <div class="hero-panel">
-        <h2 class="hero-title brand-font">Built for Any Connection</h2>
+        <h2 class="hero-title brand-font">Build Smart, Not Heavy: PWA &amp; In-Browser AI</h2>
         <div class="hero-grid">
           <div class="hero-item">
             <svg class="telegram-arrow" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
               <path d="M4 2.5L20 12L4 21.5L7.5 12L4 2.5Z"/>
             </svg>
-            <p>Built for intermittent connectivity and device restarts across the Rift Valley.</p>
+            <p>Runs in-browser AI summarization locally via window.ai and Gemini Nano with zero cloud round-trips.</p>
           </div>
           <div class="hero-item">
             <svg class="telegram-arrow" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
               <path d="M4 2.5L20 12L4 21.5L7.5 12L4 2.5Z"/>
             </svg>
-            <p>Instant zero-latency app initialization powered by Workbox Core precaching.</p>
+            <p>Accesses local field files directly from device storage using Project Fugu File System Access API.</p>
           </div>
           <div class="hero-item">
             <svg class="telegram-arrow" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
               <path d="M4 2.5L20 12L4 21.5L7.5 12L4 2.5Z"/>
             </svg>
-            <p>Field incident reports safely persist in IndexedDB via Background Sync.</p>
+            <p>Guarantees instant zero-latency offline startup through native Service Worker precaching.</p>
           </div>
           <div class="hero-item">
             <svg class="telegram-arrow" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
               <path d="M4 2.5L20 12L4 21.5L7.5 12L4 2.5Z"/>
             </svg>
-            <p>Automatic network replay flushes the outbox and clears OS badges on recovery.</p>
+            <p>Queues offline incident reports in IndexedDB and replays automatically via Background Sync.</p>
           </div>
         </div>
       </div>
@@ -58,8 +58,15 @@
       <!-- Metrics Row -->
       <div class="metrics-row">
         <div class="metric-card">
-          <p class="metric-label">Network state</p>
+          <div class="metric-header-flex">
+            <p class="metric-label">Network state</p>
+            <button type="button" id="sim-offline-btn" class="sim-toggle-btn" title="Toggle simulated offline mode for stage demo">Simulate offline</button>
+          </div>
           <p id="metric-network" class="metric-value brand-font text-blue">Online</p>
+        </div>
+        <div class="metric-card">
+          <p class="metric-label">Local AI engine</p>
+          <p id="metric-ai" class="metric-value brand-font text-green">In-Browser AI</p>
         </div>
         <div class="metric-card">
           <p class="metric-label">Outbox queue</p>
@@ -238,13 +245,51 @@
           </div>
 
           <div class="form-group">
-            <label for="observation-notes">Observation notes</label>
+            <div class="label-split">
+              <label for="observation-notes">Observation notes &amp; document</label>
+              <div class="action-tools-group">
+                <button type="button" id="open-doc-btn" class="action-link" title="Open local document via Project Fugu File System Access API">Open local file</button>
+                <span class="tool-sep">|</span>
+                <button type="button" id="load-sample-btn" class="action-link" title="Load sample telemetry notes for instant demo">Sample doc</button>
+              </div>
+            </div>
             <textarea
               id="observation-notes"
-              rows="4"
-              placeholder="Detail observed field metrics, equipment state, or hazards..."
+              rows="5"
+              placeholder="Detail observed field metrics, equipment state, or open a local document..."
               required
             ></textarea>
+
+            <div class="ai-trigger-row">
+              <button type="button" id="run-ai-btn" class="action-pill-ai">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                </svg>
+                <span>Summarize with In-Browser AI (window.ai)</span>
+              </button>
+              <span id="ai-loading-indicator" class="ai-loading-text" style="display: none;">Analyzing on-device...</span>
+            </div>
+
+            <!-- In-Browser AI Insights Panel -->
+            <div id="ai-insights-panel" class="ai-insights-panel" style="display: none;">
+              <div class="ai-panel-header">
+                <div class="ai-panel-title-wrap">
+                  <span class="ai-panel-title">In-Browser AI Analysis</span>
+                  <span id="ai-model-badge" class="chip-ai">window.ai</span>
+                </div>
+                <div class="ai-metrics-strip">
+                  <span id="ai-latency-badge" class="ai-stat-chip">Latency: 22ms</span>
+                  <span class="ai-stat-chip">Network: 0 bytes</span>
+                  <span class="ai-stat-chip">Privacy: 100% on-device</span>
+                </div>
+              </div>
+              <p id="ai-summary-text" class="ai-summary-body"></p>
+              <ul id="ai-bullets-list" class="ai-bullets-list"></ul>
+              <div class="ai-panel-footer">
+                <span id="ai-severity-suggestion" class="ai-suggestion-text">Suggested severity: <strong>Medium</strong></span>
+                <button type="button" id="apply-ai-btn" class="action-link">Apply AI severity</button>
+              </div>
+            </div>
           </div>
 
           <button type="submit" id="submit-btn" class="primary-button brand-font">
